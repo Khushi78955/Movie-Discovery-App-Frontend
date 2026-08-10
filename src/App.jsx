@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 const movies = [
   {
     id: 1,
@@ -33,18 +35,24 @@ function MovieCard({ movie }) {
       <p>⭐ {movie.rating}</p>
       <p>{movie.year}</p>
       <p>{movie.genre}</p>
-
-      <button onClick={handleFavorite}>
-        Favorite
-      </button>
+      <button onClick={handleFavorite}>Favorite</button>
     </div>
   );
 }
 
 function App() {
+  const [searchQuery, setSearchQuery] = useState("");
+
   function handleSearchChange(event) {
-    console.log(event.target.value);
+    setSearchQuery(event.target.value);
   }
+
+  const filteredMovies = movies.filter(movie =>
+    movie.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
+  );
+
 
   return (
     <main>
@@ -53,10 +61,19 @@ function App() {
       <input
         type="text"
         placeholder="Search movies..."
+        value={searchQuery}
         onChange={handleSearchChange}
       />
 
-      {movies.map(movie => (
+      <p>Searching for: {searchQuery}</p>
+
+      <p>{filteredMovies.length} movies found</p>
+
+      {filteredMovies.length === 0 && (
+        <p>No movies found.</p>
+      )}
+
+      {filteredMovies.map(movie => (
         <MovieCard
           key={movie.id}
           movie={movie}
