@@ -29,16 +29,16 @@ function MovieDetailsPage() {
 
     if (error) {
         return (
-            <main style={{ padding: "24px" }}>
+            <main className="container">
                 <Link to="/">← Back to Home</Link>
-                <p style={{ color: "red" }}>{error}</p>
+                <p className="error">{error}</p>
             </main>
         );
     }
 
     if (isLoading) {
         return (
-            <main style={{ padding: "24px" }}>
+            <main className="container">
                 <Link to="/">← Back to Home</Link>
                 <p>Loading movie details...</p>
             </main>
@@ -46,40 +46,33 @@ function MovieDetailsPage() {
     }
 
     return (
-        <main
-            style={{
-                maxWidth: "700px",
-                margin: "0 auto",
-                padding: "24px",
-                fontFamily: "Arial, sans-serif",
+        <main className="container">
+        <Link to="/">← Back to Home</Link>
+
+        <h1 className="title">{movie.name}</h1>
+
+        <p>
+            <strong>Rating:</strong>{" "}
+            {movie.rating.average || "N/A"}
+        </p>
+
+        <p>
+            <strong>Year:</strong>{" "}
+            {movie.premiered
+                ? movie.premiered.slice(0, 4)
+                : "N/A"}
+        </p>
+
+        <p>
+            <strong>Genre:</strong>{" "}
+            {movie.genres[0] || "Unknown"}
+        </p>
+
+        <div
+            dangerouslySetInnerHTML={{
+            __html: movie.summary || "No summary available",
             }}
-        >
-            <Link to="/">← Back to Home</Link>
-
-            <h1>{movie.name}</h1>
-
-            <p>
-                <strong>Rating:</strong>{" "}
-                {movie.rating.average || "N/A"}
-            </p>
-
-            <p>
-                <strong>Year:</strong>{" "}
-                {movie.premiered
-                    ? movie.premiered.slice(0, 4)
-                    : "N/A"}
-            </p>
-
-            <p>
-                <strong>Genre:</strong>{" "}
-                {movie.genres[0] || "Unknown"}
-            </p>
-
-            <div
-                dangerouslySetInnerHTML={{
-                    __html: movie.summary || "No summary available",
-                }}
-            />
+        />
         </main>
     );
 }
