@@ -29,10 +29,20 @@ function MovieCard({ movie, showRatings, onFavorite }) {
 function App() {
   const [movies, setMovies] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("batman");
   const [showRatings, setShowRatings] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [favorites, setFavorites] = useState([]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery || "batman");
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
 
   useEffect(() => {
     async function fetchMovies() {
@@ -41,8 +51,14 @@ function App() {
         setError("");
 
         const response = await fetch(
-          "https://api.tvmaze.com/search/shows?q=batman"
+          `https://api.tvmaze.com/search/shows?q=${encodeURIComponent(
+            debouncedQuery
+          )}`
         );
+
+        if (!response.ok) {
+          throw new Error("Request failed");
+        }
 
         const data = await response.json();
 
@@ -57,7 +73,7 @@ function App() {
         }));
 
         setMovies(formattedMovies);
-      } catch (err) {
+      } catch {
         setError("Failed to fetch movies");
       } finally {
         setIsLoading(false);
@@ -65,7 +81,7 @@ function App() {
     }
 
     fetchMovies();
-  }, []);
+  }, [debouncedQuery]);
 
   function handleSearchChange(event) {
     setSearchQuery(event.target.value);
@@ -80,14 +96,8 @@ function App() {
       return;
     }
 
-    setFavorites([...favorites, movie]);
+    setFavorites((prev) => [...prev, movie]);
   }
-
-  const filteredMovies = movies.filter((movie) =>
-    movie.title
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
 
   return (
     <main
@@ -151,8 +161,8 @@ function App() {
         </button>
       </div>
 
-      <p>Searching for: {searchQuery || "Nothing"}</p>
-      <p>{filteredMovies.length} movies found</p>
+      <p>Searching for: {debouncedQuery}</p>
+      <p>{movies.length} movies found</p>
 
       <hr />
 
@@ -160,10 +170,10 @@ function App() {
         <p style={{ color: "red" }}>{error}</p>
       ) : isLoading ? (
         <p>Loading movies...</p>
-      ) : filteredMovies.length === 0 ? (
+      ) : movies.length === 0 ? (
         <p>No movies found.</p>
       ) : (
-        filteredMovies.map((movie) => (
+        movies.map((movie) => (
           <MovieCard
             key={movie.id}
             movie={movie}
