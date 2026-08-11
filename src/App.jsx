@@ -1,84 +1,177 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const movies = [
-  {
-    id: 1,
-    title: "Interstellar",
-    rating: 8.7,
-    year: 2014,
-    genre: "Sci-Fi"
-  },
-  {
-    id: 2,
-    title: "Inception",
-    rating: 8.8,
-    year: 2010,
-    genre: "Sci-Fi"
-  },
-  {
-    id: 3,
-    title: "The Dark Knight",
-    rating: 9.0,
-    year: 2008,
-    genre: "Action"
-  }
-];
-
-function MovieCard({ movie }) {
+function MovieCard({ movie, showRatings, onFavorite }) {
   function handleFavorite() {
-    console.log("Favorite clicked:", movie.title);
+    onFavorite(movie);
   }
 
   return (
-    <div>
+    <div
+      style={{
+        border: "1px solid #ccc",
+        padding: "16px",
+        marginBottom: "12px",
+        borderRadius: "8px",
+      }}
+    >
       <h2>{movie.title}</h2>
-      <p>⭐ {movie.rating}</p>
+
+      {showRatings && <p>⭐ {movie.rating}</p>}
+
       <p>{movie.year}</p>
       <p>{movie.genre}</p>
+
       <button onClick={handleFavorite}>Favorite</button>
     </div>
   );
 }
 
 function App() {
+  const [movies, setMovies] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showRatings, setShowRatings] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [favorites, setFavorites] = useState([]);
+
+  useEffect(() => {
+    async function fetchMovies() {
+      try {
+        setIsLoading(true);
+        setError("");
+
+        const response = await fetch(
+          "https://api.tvmaze.com/search/shows?q=batman"
+        );
+
+        const data = await response.json();
+
+        const formattedMovies = data.map((item) => ({
+          id: item.show.id,
+          title: item.show.name,
+          rating: item.show.rating.average || "N/A",
+          year: item.show.premiered
+            ? item.show.premiered.slice(0, 4)
+            : "N/A",
+          genre: item.show.genres[0] || "Unknown",
+        }));
+
+        setMovies(formattedMovies);
+      } catch (err) {
+        setError("Failed to fetch movies");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchMovies();
+  }, []);
 
   function handleSearchChange(event) {
     setSearchQuery(event.target.value);
   }
 
-  const filteredMovies = movies.filter(movie =>
+  function handleAddFavorite(movie) {
+    const alreadyFavorite = favorites.some(
+      (fav) => fav.id === movie.id
+    );
+
+    if (alreadyFavorite) {
+      return;
+    }
+
+    setFavorites([...favorites, movie]);
+  }
+
+  const filteredMovies = movies.filter((movie) =>
     movie.title
       .toLowerCase()
       .includes(searchQuery.toLowerCase())
   );
 
-
   return (
-    <main>
+    <main
+      style={{
+        maxWidth: "700px",
+        margin: "0 auto",
+        padding: "24px",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
       <h1>Movie Discovery</h1>
+
+      <p>
+        <strong>Favorites:</strong> {favorites.length}
+      </p>
+
+      <h2>Favorite Movies</h2>
+
+      {favorites.length === 0 ? (
+        <p>No favorites yet.</p>
+      ) : (
+        <ul>
+          {favorites.map((movie) => (
+            <li key={movie.id}>{movie.title}</li>
+          ))}
+        </ul>
+      )}
+
+      <hr />
 
       <input
         type="text"
         placeholder="Search movies..."
         value={searchQuery}
         onChange={handleSearchChange}
+        style={{
+          width: "100%",
+          padding: "10px",
+          marginBottom: "12px",
+        }}
       />
 
-      <p>Searching for: {searchQuery}</p>
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          marginBottom: "16px",
+        }}
+      >
+        {searchQuery && (
+          <button onClick={() => setSearchQuery("")}>
+            Clear
+          </button>
+        )}
 
+        <button
+          onClick={() => setShowRatings(!showRatings)}
+        >
+          {showRatings ? "Hide Ratings" : "Show Ratings"}
+        </button>
+      </div>
+
+      <p>Searching for: {searchQuery || "Nothing"}</p>
       <p>{filteredMovies.length} movies found</p>
 
-      {filteredMovies.length === 0 && (
-        <p>No movies found.</p>
-      )}
+      <hr />
 
-      {filteredMovies.map(movie => (
-        <MovieCard
-          key={movie.id}
-          movie={movie}
-        />
-      ))}
+      {error ? (
+        <p style={{ color: "red" }}>{error}</p>
+      ) : isLoading ? (
+        <p>Loading movies...</p>
+      ) : filteredMovies.length === 0 ? (
+        <p>No movies found.</p>
+      ) : (
+        filteredMovies.map((movie) => (
+          <MovieCard
+            key={movie.id}
+            movie={movie}
+            showRatings={showRatings}
+            onFavorite={handleAddFavorite}
+          />
+        ))
+      )}
     </main>
   );
 }
